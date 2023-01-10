@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load thumbnail %}
+{% block title %}
+Посты избранных авторов
+{% endblock %}
+{% block content %}
+<div class="container">
+{% include 'posts/includes/switcher.html' %}
+    <h1>Последние обновления избранных авторов</h1>
+    {% for post in page_obj %}
+    <article>
+        <ul>
+            <li>
+                Автор: {{ post.author.get_full_name }}
+                <a href="{% url 'posts:profile' post.author.username %}">все посты пользователя</a>
+            </li>
+            <li>
+                Дата публикации: {{ post.pub_date }}
+            </li>
+        </ul>
+        {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+        <img class="card-img my-2" src="{{ im.url }}">
+        {% endthumbnail %}
+        <p>
+            {{ post.text|linebreaksbr }}
+        </p>
+        <a href="{% url 'posts:post_detail' post.id %}">подробная информация </a>
+    </article>
+    {% if post.group %}
+    <a href="{% url 'posts:group_list' post.group.slug %}">все записи группы</a>
+    {% else %}
+    <a href="#">записи не присвоили группу :(</a>
+    {% endif %}
+    <p>
+    {% if not forloop.last %}
+    <hr>{% endif %}
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+</div>
+{% endblock %}
