@@ -1,5 +1,5 @@
 from django.urls import reverse
-from ..models import Group, Post, User, Comment
+from ..models import Comment, Group, Post, User
 import shutil
 import tempfile
 from django.conf import settings
@@ -103,20 +103,11 @@ class PostFormTests(TestCase):
             data=form_data,
             follow=True)
         modified_post = Post.objects.get(id=self.post.id)
-        self.assertRedirects(response, reverse('posts:post_detail', args=(1,)))
+        self.assertRedirects(response, reverse(
+            'posts:post_detail', kwargs={'post_id': self.post.id}))
         self.assertEqual(Post.objects.count(), posts_count)
-        self.assertNotEqual(
-            modified_post.text,
-            self.post.text,
-            'Текст поста не изменился!'
-        )
-        self.assertNotEqual(
-            modified_post.group,
-            self.post.group,
-            'Группа у поста не изменилась!'
-        )
-        self.assertEqual(modified_post.group.title,
-                         'Вторая тестовая группа')
+        self.assertEqual(modified_post.text, form_data['text'])
+        self.assertEqual(modified_post.group_id, form_data['group'])
 
     def test_comment_can_authorized_user(self):
         """Комментировать может только авторизованный пользователь."""
@@ -125,12 +116,12 @@ class PostFormTests(TestCase):
         }
         response = self.authorized_client.post(
             reverse((
-                'posts:add_comment'), kwargs={'post_id': f'{self.post.id}'}),
+                'posts:add_comment'), kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True
         )
         self.assertRedirects(response, reverse((
-            'posts:post_detail'), kwargs={'post_id': f'{self.post.id}'}))
+            'posts:post_detail'), kwargs={'post_id': self.post.id}))
         self.assertTrue(
             Comment.objects.filter(text='Новый комментарий').exists()
         )
@@ -143,10 +134,10 @@ class PostFormTests(TestCase):
         }
         response = self.authorized_client.post(
             reverse((
-                'posts:add_comment'), kwargs={'post_id': f'{self.post.id}'}),
+                'posts:add_comment'), kwargs={'post_id': self.post.id}),
             data=form_data,
             follow=True
         )
         self.assertRedirects(response, reverse((
-            'posts:post_detail'), kwargs={'post_id': f'{self.post.id}'}))
+            'posts:post_detail'), kwargs={'post_id': self.post.id}))
         self.assertEqual(Comment.objects.count(), comments_count + 1)

@@ -2,9 +2,11 @@ from django.core.paginator import Paginator
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.cache import cache_page
+
 from .forms import PostForm, CommentForm
 from .models import Post, Group, Comment, Follow
-from django.views.decorators.cache import cache_page
+
 
 SELECT_LIMIT = 10
 CACHE_TIME = 20
@@ -77,24 +79,22 @@ def post_create(request):
     post = form.save(commit=False)
     post.author = request.user
     post.save()
-    return redirect('posts:profile', request.user)
+    return redirect('posts:profile', post.author)
 
 
 @login_required
 def post_edit(request, post_id):
-    template = 'posts/post_create.html'
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
-        return redirect('posts:index')
-    form = PostForm(
-        request.POST or None,
-        files=request.FILES or None,
-        instance=post)
-    if form.is_valid():
+        return redirect('posts:post_detail', post.pk)
+    form = PostForm(request.POST or None, instance=post)
+    if request.method == 'POST' and form.is_valid():
         form.save()
-        return redirect('posts:post_detail', post_id=post_id)
-    return render(request, template,
-                  {'post': post, 'form': form, 'is_edit': True})
+        return redirect('posts:post_detail', post.pk)
+    context = {
+        'form': form,
+    }
+    return render(request, 'posts/post_create.html', context)
 
 
 @login_required

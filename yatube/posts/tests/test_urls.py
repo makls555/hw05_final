@@ -92,8 +92,7 @@ class StaticURLTests(TestCase):
 
     def test_post_edit_redirect_auth_user_no_author(self):
         """Страница post/<int>/edit/ переадресует авторизованного НЕавтора"""
-        response = self.authorized_client_not_author.get(
-            reverse('posts:post_edit',
-                    kwargs={'post_id': StaticURLTests.post_id}),
-            follow=True)
-        self.assertRedirects(response, reverse('posts:index'))
+        response = self.authorized_client.get(reverse('posts:post_edit',
+                                                      args=(self.post.id,)))
+        self.assertRedirects(response, reverse('posts:post_detail',
+                                               args=(self.post.id,)))

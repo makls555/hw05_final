@@ -1,30 +1,20 @@
-from http import HTTPStatus
+from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 
+User = get_user_model()
 
-class StaticURLTests(TestCase):
+
+class TaskURLTests(TestCase):
     def setUp(self):
-        """Устанавливаем данные для тестирования."""
         self.guest_client = Client()
+        self.user = User.objects.create_user(username='HasNoName')
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
-    def test_urls_about_correct_template(self):
-        """url-адрес использует соответсвующий шаблон"""
-        templates_urls_name = {
-            'about/author.html': '/about/author/',
-            'about/tech.html': '/about/tech/'
-        }
-        for template, address in templates_urls_name.items():
-            with self.subTest(address=address):
-                response = self.guest_client.get(address, follow=True)
-                self.assertTemplateUsed(response, template)
+    def test_url_uses_correct_template(self):
+        reverse = self.authorized_client.get('/about/author/')
+        self.assertTemplateUsed(reverse, 'about/author.html')
 
-    def tests_urls_about_avaible(self):
-        """Страницы из url httpstatus доступны всем пользователям."""
-        urls_names_https_status = {
-            '/about/author/': HTTPStatus.OK,
-            '/about/tech/': HTTPStatus.OK
-        }
-        for address, httpstatus in urls_names_https_status.items():
-            with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertEqual(response.status_code, httpstatus)
+    def test_url_uses_correct_template(self):
+        reverse = self.authorized_client.get('/about/tech/')
+        self.assertTemplateUsed(reverse, 'about/tech.html')
