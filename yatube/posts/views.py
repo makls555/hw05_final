@@ -1,42 +1,39 @@
+from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views.decorators.cache import cache_page
 
+from .models import Group, Post, User, Comment, Follow
 from .forms import PostForm, CommentForm
-from .models import Post, Group, Comment, Follow
 
 
 SELECT_LIMIT = 10
 CACHE_TIME = 20
 
+NUMBER_OF_POSTS: int = 10
 
-@cache_page(CACHE_TIME)
+
 def index(request):
-    template = 'posts/index.html'
-    posts = Post.objects.all()
-    paginator = Paginator(posts, SELECT_LIMIT)
+    posts = Post.objects.all().order_by('-pub_date')
+    paginator = Paginator(posts, NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
         'page_obj': page_obj,
     }
-    return render(request, template, context)
+    return render(request, 'posts/index.html', context)
 
 
 def group_list(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    posts = group.posts.all()
-    paginator = Paginator(posts, SELECT_LIMIT)
+    posts = Post.objects.filter(group=group).order_by('-pub_date')
+    paginator = Paginator(posts, NUMBER_OF_POSTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    template = 'posts/group_list.html'
     context = {
         'group': group,
-        'page_obj': page_obj
+        'page_obj': page_obj,
     }
-    return render(request, template, context)
+    return render(request, 'posts/group_list.html', context)
 
 
 def profile(request, username):
@@ -72,14 +69,16 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request):
-    form = PostForm(request.POST or None,
-                    files=request.FILES or None)
-    if not form.is_valid():
-        return render(request, 'posts/post_create.html', {'form': form})
-    post = form.save(commit=False)
-    post.author = request.user
-    post.save()
-    return redirect('posts:profile', post.author)
+    form = PostForm(request.POST or None)
+    context = {
+        'form': form
+    }
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect('posts:profile', post.author.username)
+    return render(request, 'posts/post_create.html', context)
 
 
 @login_required

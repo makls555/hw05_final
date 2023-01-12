@@ -78,11 +78,11 @@ class PostViewTests(TestCase):
         content = self.authorized_client_1.get(
             reverse('posts:index')).content
         self.post_2.delete()
-        content_cached = self.authorized_client_2.get(
+        content_cached = self.authorized_client_1.get(
             reverse('posts:index')).content
         self.assertEqual(content, content_cached)
         cache.clear()
-        content_clear = self.authorized_client_2.get(
+        content_clear = self.authorized_client_1.get(
             reverse('posts:index')).content
         self.assertNotEqual(content, content_clear)
 

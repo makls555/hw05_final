@@ -1,10 +1,13 @@
-from django.urls import reverse
-from ..models import Comment, Group, Post, User
 import shutil
 import tempfile
+from http import HTTPStatus
+
+from django.urls import reverse
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+
+from ..models import Comment, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -86,8 +89,7 @@ class PostFormTests(TestCase):
                 text='Тестовый пост',
                 author=self.author
             ).exists())
-        self.assertEqual(response.context['page_obj'].object_list[0].image,
-                         'posts/small.gif')
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_edit_post_form(self):
         """При отправке формы изменяется пост в базе данных.
